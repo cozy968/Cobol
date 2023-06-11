@@ -1,0 +1,824 @@
+      ******* ABEXTWS 20 <948348598>
+      *****************************************************************
+      * Library:        ABEXTWS
+      *
+      * Description:    Working Storage for the ABEXTRACT OBJECT     
+      *
+      * System:         MO
+      *
+      * Database files: ABHISTHDR  (XHH)
+      *                 ABHISTLINE (XHL)
+      *                 ABCURRHDR  (XCH)
+      *                 ABCURRLINE (XCL)
+      *
+      * Object:         1000-ABEXTRACT-OBJECT
+      *
+      ******************************************************************
+
+       01  ABEXTWS.
+
+      *-----------------------------------------------------------------
+         03  ABEXTWS-CONTROL-PARMS.
+      *-----------------------------------------------------------------
+
+           05  ABEXTWS-USE-FR-TO-SW                PIC 9(01).
+               88  ABEXTWS-DONT-USE-FR-TO-PARMS    VALUE 0.
+               88  ABEXTWS-USE-FR-TO-PARMS         VALUE 1.
+
+           05  ABEXTWS-PARM-FR-DATE. 
+               10  ABEXTWS-PARM-FR-CC              PIC X(02).
+               10  ABEXTWS-PARM-FR-YY              PIC X(02).
+               10  ABEXTWS-PARM-FR-MM              PIC X(02).
+               10  ABEXTWS-PARM-FR-MM-N 
+                   REDEFINES
+                   ABEXTWS-PARM-FR-MM              PIC 9(02).
+               10  ABEXTWS-PARM-FR-DD              PIC X(02).
+               10  ABEXTWS-PARM-FR-DD-N 
+                   REDEFINES
+                   ABEXTWS-PARM-FR-DD              PIC 9(02).
+           05  ABEXTWS-PARM-FR-DATE-N  
+               REDEFINES
+               ABEXTWS-PARM-FR-DATE                PIC 9(08).
+
+           05  ABEXTWS-PARM-TO-DATE.
+               10  ABEXTWS-PARM-TO-CC              PIC X(02).
+               10  ABEXTWS-PARM-TO-YY              PIC X(02).
+               10  ABEXTWS-PARM-TO-MM              PIC X(02).
+               10  ABEXTWS-PARM-TO-MM-N 
+                   REDEFINES
+                   ABEXTWS-PARM-TO-MM              PIC 9(02).
+               10  ABEXTWS-PARM-TO-DD              PIC X(02).
+               10  ABEXTWS-PARM-TO-DD-N 
+                   REDEFINES
+                   ABEXTWS-PARM-TO-DD              PIC 9(02).
+           05  ABEXTWS-PARM-TO-DATE-N 
+               REDEFINES
+               ABEXTWS-PARM-TO-DATE                PIC 9(08).
+
+
+           05  WS-WORK-DATE                    PIC X(08).
+           05  WS-WORK-DATE-N REDEFINES WS-WORK-DATE
+                                               PIC 9(08).
+
+
+           05  ABEXTWS-PROCESS-FILE-CONTROLS.
+               10  ABEXTWS-ABHISTHDR-EOF-SW        PIC X(01).
+                   88  ABEXTWS-ABHISTHDR-EOF       VALUE "Y".
+               10  ABEXTWS-ABCURRHDR-EOF-SW        PIC X(01).
+                   88  ABEXTWS-ABCURRHDR-EOF       VALUE "Y".
+               10  ABEXTWS-ABHISTLINE-EOF-SW       PIC X(01).
+                   88  ABEXTWS-ABHISTLINE-EOF      VALUE "Y".
+               10  ABEXTWS-ABCURRLINE-EOF-SW       PIC X(01).
+                   88  ABEXTWS-ABCURRLINE-EOF      VALUE "Y".
+               10  ABEXTWS-PROCESS-EOF-SW          PIC X(01).
+                   88  ABEXTWS-PROCESS-EOF         VALUE "Y".
+               10  ABEXTWS-PROCESS-DRIVER-SW       PIC X(01).
+                   88  ABEXTWS-HEADER-DRIVING      VALUE "H".
+                   88  ABEXTWS-LINE-DRIVING        VALUE "L".
+               10  ABEXTWS-PROCESS-CURR-ONLY-SW    PIC X(01).
+                   88  ABEXTWS-PROCESS-CURR-ONLY   VALUE "C".
+
+
+      *-----------------------------------------------------------------
+         03  ABEXTWS-METHOD-FLAG           PIC 9(03)  VALUE ZEROS.
+      *-----------------------------------------------------------------
+
+               88  ABEXTWS-EXT-METHODS               VALUE  1 THRU 3.
+               88  ABEXTWS-EXT-FIND                  VALUE  1.
+               88  ABEXTWS-EXT-START-FIND            VALUE  2.
+               88  ABEXTWS-EXT-FIND-NEXT             VALUE  3.
+      *         88  ABEXTWS-EXT-FIND-PREV             VALUE  4.
+
+      *-----------------------------------------------------------------
+         03  ABEXTWS-COMMON-WORK-AREA.                              
+      *-----------------------------------------------------------------
+
+           05  ABEXTWS-WORK-FILTER-STRING          PIC X(50).         
+
+           05  ABEXTWS-WORK-FILTERS.
+            06 ABEXTWS-WORK-FILTERS-1.
+               10  ABEXTWS-WORK-COMPANY-A          PIC X(04).
+               10  ABEXTWS-WORK-COMPANY REDEFINES 
+                   ABEXTWS-WORK-COMPANY-A          PIC 9(04).
+               10  ABEXTWS-WORK-ORDSRCE-CODE       PIC X(02).
+               10  ABEXTWS-WORK-ORDSRCE-YR-A       PIC X(04).
+               10  ABEXTWS-WORK-ORDSRCE-YR REDEFINES
+                   ABEXTWS-WORK-ORDSRCE-YR-A       PIC 9(04).
+               10  ABEXTWS-WORK-ORDSRCE-NBR-A      PIC X(02).
+               10  ABEXTWS-WORK-ORDSRCE-NBR REDEFINES           
+                   ABEXTWS-WORK-ORDSRCE-NBR-A      PIC 9(02).
+               10  ABEXTWS-WORK-CUSTOMER           PIC X(09).
+               10  ABEXTWS-WORK-AB-REQUEST         PIC X(10).
+               10  ABEXTWS-WORK-REQUEST-DATE-A     PIC X(08).
+               10  ABEXTWS-WORK-REQUEST-DATE REDEFINES            
+                   ABEXTWS-WORK-REQUEST-DATE-A     PIC 9(08).
+               10  ABEXTWS-WORK-ORDER-NBR-A        PIC X(08).
+               10  ABEXTWS-WORK-ORDER-NBR REDEFINES
+                   ABEXTWS-WORK-ORDER-NBR-A        PIC 9(08).
+               10  ABEXTWS-WORK-CUST-TYPE          PIC X(02).
+               10  ABEXTWS-WORK-CUST-ORG-CODE      PIC X(06).
+            06 ABEXTWS-WORK-FILTERS-2.
+               10  ABEXTWS-WORK-SHIP-CITY          PIC X(18).
+               10  ABEXTWS-WORK-CUST-STATE         PIC X(02).
+               10  ABEXTWS-WORK-CUST-MCA           PIC X(03).
+               10  ABEXTWS-WORK-PAYMENT-METHOD     PIC X(04).
+               10  ABEXTWS-WORK-SHIP-METHOD        PIC X(04).
+            06 ABEXTWS-WORK-FILTERS-LINE.
+               10  ABEXTWS-WORK-ITEM               PIC X(32).
+               10  ABEXTWS-WORK-ITEM-TYPE          PIC X(01).
+               10  ABEXTWS-WORK-LOCATION           PIC X(05).
+               10  ABEXTWS-WORK-SHIP-DATE-A        PIC X(08).
+               10  ABEXTWS-WORK-SHIP-DATE REDEFINES               
+                   ABEXTWS-WORK-SHIP-DATE-A        PIC 9(08).
+               10  ABEXTWS-WORK-PRINT-DATE-A       PIC X(08).
+               10  ABEXTWS-WORK-PRINT-DATE REDEFINES               
+                   ABEXTWS-WORK-PRINT-DATE-A       PIC 9(08).
+               10  ABEXTWS-WORK-ALPHA-CODE         PIC X(04).
+               10  ABEXTWS-WORK-SALES-MAJCL        PIC X(04).
+               10  ABEXTWS-WORK-INVEN-MAJCL        PIC X(05).
+
+
+      *------  COMMON HEADER, LINE DATA AREA  --------------------
+
+           05  ABEXTWS-WRK-ABHISTHDR.
+               10  ABEXTWS-WHH-UNIQUE-I-D              PIC X(36).
+               10  ABEXTWS-WHH-REQUEST-DATE            PIC 9(08).
+               10  ABEXTWS-WHH-COMPANY                 PIC 9(04).
+               10  ABEXTWS-WHH-ORDER-NBR               PIC 9(08).
+               10  ABEXTWS-WHH-CUSTOMER                PIC X(09).
+               10  ABEXTWS-WHH-BATCH-NAME              PIC X(10).
+               10  ABEXTWS-WHH-AB-REQUEST              PIC X(10).
+               10  ABEXTWS-WHH-CUST-TYPE               PIC X(02).
+               10  ABEXTWS-WHH-CUST-ORG-CODE           PIC X(06).
+               10  ABEXTWS-WHH-SHIP-CITY               PIC X(18).
+               10  ABEXTWS-WHH-CUST-STATE              PIC X(02).
+               10  ABEXTWS-WHH-CUST-MCA                PIC X(03).
+               10  ABEXTWS-WHH-BUDGET-FLAG             PIC X(01).
+               10  ABEXTWS-WHH-ORDSRCE-CODE            PIC X(02).
+               10  ABEXTWS-WHH-ORDSRCE-YR              PIC 9(04).
+               10  ABEXTWS-WHH-ORDSRCE-NBR             PIC 9(02).
+               10  ABEXTWS-WHH-PAYMENT-METHOD          PIC X(04).
+               10  ABEXTWS-WHH-SHIP-METHOD             PIC X(04).
+               10  ABEXTWS-WHH-SAP-OVR-COMP            PIC 9(04).
+               10  ABEXTWS-WHH-SAP-OVR-BUS-A           PIC X(04).
+               10  ABEXTWS-WHH-SAP-OVR-COST-C          PIC X(10).
+               10  ABEXTWS-WHH-SAP-OVR-ACCT            PIC X(10).
+               10  ABEXTWS-WHH-SAP-OVR-ALLOC           PIC X(18).
+               10  ABEXTWS-WHH-SAP-OVR-INTORD          PIC X(12).
+               10  FILLER                              PIC X(45).
+
+           05  ABEXTWS-WRK-ABHISTLINE.
+      *  ABCURRLINE ONLY - BEGIN
+               10  ABEXTWS-WHL-HDR-UNIQUE-I-D          PIC X(36).
+      *  ABCURRLINE ONLY - END
+               10  ABEXTWS-WHL-REQUEST-DATE            PIC 9(08).
+      *  ABHISTLINE ONLY - BEGIN
+               10  ABEXTWS-WHL-COMPANY                 PIC 9(04).
+               10  ABEXTWS-WHL-ORDER-NBR               PIC 9(08).
+      *  ABHISTLINE ONLY - END
+               10  ABEXTWS-WHL-LINE-NBR                PIC 9(06).
+               10  ABEXTWS-WHL-SHIPMENT-NBR            PIC 9(10).
+               10  ABEXTWS-WHL-ITEM                    PIC X(32).
+               10  ABEXTWS-WHL-ITEM-TYPE               PIC X(01).
+               10  ABEXTWS-WHL-LOCATION                PIC X(05).
+               10  ABEXTWS-WHL-SHIP-DATE               PIC 9(08).
+               10  ABEXTWS-WHL-PRINT-DATE              PIC 9(08).
+               10  ABEXTWS-WHL-GENERIC                 PIC X(10).
+               10  ABEXTWS-WHL-LONG-DESC               PIC X(60).
+               10  ABEXTWS-WHL-ALPHA-CODE              PIC X(04).
+               10  ABEXTWS-WHL-PROJECT-NBR             PIC X(06).
+               10  ABEXTWS-WHL-SALES-MAJCL             PIC X(04).
+               10  ABEXTWS-WHL-SALES-MINCL             PIC X(04).
+               10  ABEXTWS-WHL-INVEN-MAJCL             PIC X(04).
+               10  ABEXTWS-WHL-INVEN-MINCL             PIC X(04).
+               10  ABEXTWS-WHL-PURCH-MAJCL             PIC X(04).
+               10  ABEXTWS-WHL-PURCH-MINCL             PIC X(04).
+               10  ABEXTWS-WHL-GEO-MAJCL               PIC X(04).
+               10  ABEXTWS-WHL-GEO-MINCL               PIC X(04).
+               10  ABEXTWS-WHL-PROMO-CLASS             PIC X(01).
+               10  ABEXTWS-WHL-ORDERED-QTY             PIC 9(09).
+               10  ABEXTWS-WHL-SHIPPED-QTY             PIC 9(09).
+               10  ABEXTWS-WHL-UNIT-PRICE              PIC 9(08)V9(05).
+               10  ABEXTWS-WHL-UNIT-COST               PIC 9(08)V9(05).
+               10  ABEXTWS-WHL-SAP-MAT-COMP            PIC 9(04).
+               10  ABEXTWS-WHL-SAP-MAT-BUS-A           PIC X(04).
+               10  ABEXTWS-WHL-SAP-MAT-COST-C          PIC X(10).
+               10  ABEXTWS-WHL-SAP-MAT-ACCT            PIC X(10).
+               10  ABEXTWS-WHL-SAP-MAT-ALLOC           PIC X(18).
+               10  ABEXTWS-WHL-SAP-MAT-INTORD          PIC X(12).
+               10  FILLER                              PIC X(18).
+
+
+           05  ABEXTWS-WRK-HDR-KEY.
+               10  ABEXTWS-WRK-REQUEST-DATE            PIC 9(08).
+               10  ABEXTWS-WRK-COMPANY                 PIC X(04).
+               10  ABEXTWS-WRK-ORDER-NBR               PIC 9(08).
+
+
+      *-----------------------------------------------------------------
+         03  ABEXTWS-XHH-DATABASE-GROUP.
+      *-----------------------------------------------------------------
+
+           05  ABEXTWS-ABHISTHDR-SW        PIC 9(01)       VALUE ZEROS.
+               88  ABEXTWS-ABHISTHDR-NOTFOUND              VALUE ZEROS.
+               88  ABEXTWS-ABHISTHDR-FOUND                 VALUE 1.
+
+      *------  KEYS  --------------------
+
+           05  ABEXTWS-XHHSET              PIC 9(03)       VALUE ZEROS.
+           05  ABEXTWS-XHHSET-GEN-ELEMS    PIC 9(02)       VALUE ZEROS.
+
+           05  ABEXTWS-ABHISTHDR-KEYS.
+               10  ABEXTWS-XHHSET1.
+                   15  ABEXTWS-XHHSET1-REQUEST-DATE    PIC 9(08).
+                   15  ABEXTWS-XHHSET1-COMPANY         PIC 9(04).
+                   15  ABEXTWS-XHHSET1-ORDER-NBR       PIC 9(08).
+
+               10  ABEXTWS-XHHSET2.
+                   15  ABEXTWS-XHHSET2-COMPANY         PIC 9(04).
+                   15  ABEXTWS-XHHSET2-ORDSRCE-CODE    PIC X(02).
+                   15  ABEXTWS-XHHSET2-ORDSRCE-YR-A    PIC Z(04).
+                   15  ABEXTWS-XHHSET2-ORDSRCE-YR REDEFINES
+                       ABEXTWS-XHHSET2-ORDSRCE-YR-A    PIC 9(04).
+                   15  ABEXTWS-XHHSET2-ORDSRCE-NBR-A   PIC X(02).
+                   15  ABEXTWS-XHHSET2-ORDSRCE-NBR   REDEFINES
+                       ABEXTWS-XHHSET2-ORDSRCE-NBR-A   PIC 9(02).
+                   15  ABEXTWS-XHHSET2-CUSTOMER        PIC X(09).
+                   15  ABEXTWS-XHHSET2-AB-REQUEST      PIC X(10).
+                   15  ABEXTWS-XHHSET2-REQUEST-DATE    PIC 9(08).
+                   15  ABEXTWS-XHHSET2-ORDER-NBR       PIC 9(08).
+
+               10  ABEXTWS-XHHSET3.
+                   15  ABEXTWS-XHHSET3-COMPANY         PIC 9(04).
+                   15  ABEXTWS-XHHSET3-ORDER-NBR       PIC 9(08).
+
+
+      *------  FILTERS  --------------------
+
+           05  ABEXTWS-XHHP-FILTERS.
+            06 ABEXTWS-XHHP-FILTERS-1.
+               10  ABEXTWS-XHHP-COMPANY                PIC 9(04).
+               10  ABEXTWS-XHHP-ORDSRCE-CODE           PIC X(02).
+               10  ABEXTWS-XHHP-ORDSRCE-YR-A           PIC X(04).
+               10  ABEXTWS-XHHP-ORDSRCE-YR REDEFINES
+                   ABEXTWS-XHHP-ORDSRCE-YR-A           PIC 9(04).
+               10  ABEXTWS-XHHP-ORDSRCE-NBR-A          PIC X(02).
+               10  ABEXTWS-XHHP-ORDSRCE-NBR REDEFINES           
+                   ABEXTWS-XHHP-ORDSRCE-NBR-A          PIC 9(02).
+               10  ABEXTWS-XHHP-CUSTOMER               PIC X(09).
+               10  ABEXTWS-XHHP-AB-REQUEST             PIC X(10).
+               10  ABEXTWS-XHHP-REQUEST-DATE           PIC 9(08).
+               10  ABEXTWS-XHHP-ORDER-NBR-A            PIC X(08).
+               10  ABEXTWS-XHHP-ORDER-NBR REDEFINES
+                   ABEXTWS-XHHP-ORDER-NBR-A            PIC 9(08).
+               10  ABEXTWS-XHHP-CUST-TYPE              PIC X(02).
+               10  ABEXTWS-XHHP-CUST-ORG-CODE          PIC X(06).
+            06 ABEXTWS-XHHP-FILTERS-2.
+               10  ABEXTWS-XHHP-SHIP-CITY              PIC X(18).
+               10  ABEXTWS-XHHP-CUST-STATE             PIC X(02).
+               10  ABEXTWS-XHHP-CUST-MCA               PIC X(03).
+               10  ABEXTWS-XHHP-PAYMENT-METHOD         PIC X(04).
+               10  ABEXTWS-XHHP-SHIP-METHOD            PIC X(04).
+            06 ABEXTWS-XHHP-FILTERS-LINE.
+               10  ABEXTWS-XHHP-ITEM               PIC X(32).
+               10  ABEXTWS-XHHP-ITEM-TYPE          PIC X(01).
+               10  ABEXTWS-XHHP-LOCATION           PIC X(05).
+               10  ABEXTWS-XHHP-SHIP-DATE-A        PIC X(08).
+               10  ABEXTWS-XHHP-SHIP-DATE REDEFINES               
+                   ABEXTWS-XHHP-SHIP-DATE-A        PIC 9(08).
+               10  ABEXTWS-XHHP-PRINT-DATE-A       PIC X(08).
+               10  ABEXTWS-XHHP-PRINT-DATE REDEFINES               
+                   ABEXTWS-XHHP-PRINT-DATE-A       PIC 9(08).
+               10  ABEXTWS-XHHP-ALPHA-CODE         PIC X(04).
+               10  ABEXTWS-XHHP-SALES-MAJCL        PIC X(04).
+               10  ABEXTWS-XHHP-INVEN-MAJCL        PIC X(05).
+
+
+           05  ABEXTWS-XHH-FILTERS-SW                  PIC X(01).
+               88  ABEXTWS-XHH-HAS-FILTERS             VALUE "Y".
+               88  ABEXTWS-XHH-NO-FILTERS              VALUE "N".
+
+           05  ABEXTWS-XHH-FILTER-STRING               PIC X(1000).
+
+           05  ABEXTWS-XHHF-ORDSRCE-CODE    PIC X(24)       
+                       VALUE "(XHH-ORDSRCE-CODE=""?"")".
+           05  ABEXTWS-XHHF-ORDSRCE-YR      PIC X(22)       
+                       VALUE "(XHH-ORDSRCE-YR=""?"")".
+           05  ABEXTWS-XHHF-ORDSRCE-NBR     PIC X(23)       
+                       VALUE "(XHH-ORDSRCE-NBR=""?"")".
+           05  ABEXTWS-XHHF-ALPHA-CODE      PIC X(22)       
+                       VALUE "(XHH-ALPHA-CODE=""?"")".
+           05  ABEXTWS-XHHF-CUSTOMER        PIC X(20)       
+                       VALUE "(XHH-CUSTOMER=""?"")".
+           05  ABEXTWS-XHHF-AB-REQUEST      PIC X(22)       
+                       VALUE "(XHH-AB-REQUEST=""?"")".
+           05  ABEXTWS-XHHF-REQUEST-DATE    PIC X(25)       
+                       VALUE "(XHH-REQUEST-DATE>=""?"")".
+           05  ABEXTWS-XHHF-ORDER-NBR       PIC X(21)       
+                       VALUE "(XHH-ORDER-NBR=""?"")".
+           05  ABEXTWS-XHHF-CUST-TYPE       PIC X(21)       
+                       VALUE "(XHH-CUST-TYPE=""?"")".
+           05  ABEXTWS-XHHF-CUST-ORG-CODE   PIC X(25)       
+                       VALUE "(XHH-CUST-ORG-CODE=""?"")".
+           05  ABEXTWS-XHHF-SHIP-CITY      PIC X(21)       
+                       VALUE "(XHH-SHIP-CITY=""?"")".
+           05  ABEXTWS-XHHF-CUST-STATE      PIC X(22)       
+                       VALUE "(XHH-CUST-STATE=""?"")".
+           05  ABEXTWS-XHHF-CUST-MCA        PIC X(20)       
+                       VALUE "(XHH-CUST-MCA=""?"")".
+           05  ABEXTWS-XHHF-PAYMENT-METHOD  PIC X(26)       
+                       VALUE "(XHH-PAYMENT-METHOD=""?"")".
+           05  ABEXTWS-XHHF-SHIP-METHOD     PIC X(23)       
+                       VALUE "(XHH-SHIP-METHOD=""?"")".
+           05  ABEXTWS-XHHF-FR-REQ-DATE     PIC X(25)       
+                       VALUE "(XHH-REQUEST-DATE>=""?"")".
+           05  ABEXTWS-XHHF-TO-REQ-DATE     PIC X(25)       
+                       VALUE "(XHH-REQUEST-DATE<=""?"")".
+
+      *------  DATA AREA  --------------------
+
+           05  ABEXTWS-ABHISTHDR.
+               10  ABEXTWS-XHH-REQUEST-DATE            PIC 9(08).
+               10  ABEXTWS-XHH-COMPANY                 PIC 9(04).
+               10  ABEXTWS-XHH-ORDER-NBR               PIC 9(08).
+               10  ABEXTWS-XHH-CUSTOMER                PIC X(09).
+               10  ABEXTWS-XHH-AB-REQUEST              PIC X(10).
+               10  ABEXTWS-XHH-CUST-TYPE               PIC X(02).
+               10  ABEXTWS-XHH-CUST-ORG-CODE           PIC X(06).
+               10  ABEXTWS-XHH-SHIP-CITY               PIC X(18).
+               10  ABEXTWS-XHH-CUST-STATE              PIC X(02).
+               10  ABEXTWS-XHH-CUST-MCA                PIC X(03).
+               10  ABEXTWS-XHH-BUDGET-FLAG             PIC X(01).
+               10  ABEXTWS-XHH-ORDSRCE-CODE            PIC X(02).
+               10  ABEXTWS-XHH-ORDSRCE-YR              PIC 9(04).
+               10  ABEXTWS-XHH-ORDSRCE-NBR             PIC 9(02).
+               10  ABEXTWS-XHH-PAYMENT-METHOD          PIC X(04).
+               10  ABEXTWS-XHH-SHIP-METHOD             PIC X(04).
+               10  ABEXTWS-XHH-SAP-OVR-COMP            PIC 9(04).
+               10  ABEXTWS-XHH-SAP-OVR-BUS-A           PIC X(04).
+               10  ABEXTWS-XHH-SAP-OVR-COST-C          PIC X(10).
+               10  ABEXTWS-XHH-SAP-OVR-ACCT            PIC X(10).
+               10  ABEXTWS-XHH-SAP-OVR-ALLOC           PIC X(18).
+               10  ABEXTWS-XHH-SAP-OVR-INTORD          PIC X(12).
+               10  FILLER                              PIC X(45).
+
+           05  ABEXTWS-ABHISTHDR-DISPLAY REDEFINES ABEXTWS-ABHISTHDR.
+               10  ABEXTWS-ABHISTHDR-1                 PIC X(70).
+               10  ABEXTWS-ABHISTHDR-2                 PIC X(70).
+               10  ABEXTWS-ABHISTHDR-3                 PIC X(60).
+
+
+      *-----------------------------------------------------------------
+         03  ABEXTWS-XHL-DATABASE-GROUP.
+      *-----------------------------------------------------------------
+
+           05  ABEXTWS-ABHISTLINE-SW       PIC 9(01)       VALUE ZEROS.
+               88  ABEXTWS-ABHISTLINE-NOTFOUND             VALUE ZEROS.
+               88  ABEXTWS-ABHISTLINE-FOUND                VALUE 1.
+
+      *------  KEYS  --------------------
+
+           05  ABEXTWS-XHLSET              PIC 9(03)       VALUE ZEROS.
+           05  ABEXTWS-XHLSET-GEN-ELEMS    PIC 9(02)       VALUE ZEROS.
+
+           05  ABEXTWS-ABHISTLINE-KEYS.
+               10  ABEXTWS-XHLSET1.
+                   15  ABEXTWS-XHLSET1-REQUEST-DATE    PIC 9(08).
+                   15  ABEXTWS-XHLSET1-COMPANY         PIC 9(04).
+                   15  ABEXTWS-XHLSET1-ORDER-NBR       PIC 9(08).
+                   15  ABEXTWS-XHLSET1-LINE-NBR        PIC 9(06).
+               10  ABEXTWS-XHLSET2.
+                   15  ABEXTWS-XHLSET2-COMPANY         PIC 9(04).
+                   15  ABEXTWS-XHLSET2-ORDER-NBR       PIC 9(08).
+                   15  ABEXTWS-XHLSET2-LINE-NBR        PIC 9(06).
+
+
+      *------  FILTERS  --------------------
+
+           05  ABEXTWS-XHLP-FILTERS.
+               10  ABEXTWS-XHLP-REQUEST-DATE-A         PIC X(08).
+               10  ABEXTWS-XHLP-REQUEST-DATE REDEFINES               
+                   ABEXTWS-XHLP-REQUEST-DATE-A         PIC 9(08).
+               10  ABEXTWS-XHLP-COMPANY-A              PIC X(04).
+               10  ABEXTWS-XHLP-COMPANY REDEFINES                    
+                   ABEXTWS-XHLP-COMPANY-A              PIC 9(04).
+               10  ABEXTWS-XHLP-ORDER-NBR-A            PIC X(08).
+               10  ABEXTWS-XHLP-ORDER-NBR REDEFINES                  
+                   ABEXTWS-XHLP-ORDER-NBR-A            PIC 9(08).
+               10  ABEXTWS-XHLP-ITEM                   PIC X(32).
+               10  ABEXTWS-XHLP-ITEM-TYPE              PIC X(01).
+               10  ABEXTWS-XHLP-LOCATION               PIC X(05).
+               10  ABEXTWS-XHLP-SHIP-DATE-A            PIC X(08).
+               10  ABEXTWS-XHLP-SHIP-DATE REDEFINES 
+                   ABEXTWS-XHLP-SHIP-DATE-A            PIC 9(08).
+               10  ABEXTWS-XHLP-PRINT-DATE-A           PIC X(08).
+               10  ABEXTWS-XHLP-PRINT-DATE REDEFINES 
+                   ABEXTWS-XHLP-PRINT-DATE-A           PIC 9(08).
+               10  ABEXTWS-XHLP-ALPHA-CODE             PIC X(04).
+               10  ABEXTWS-XHLP-SALES-MAJCL            PIC X(04).
+               10  ABEXTWS-XHLP-INVEN-MAJCL            PIC X(04).
+
+           05  ABEXTWS-XHL-FILTERS-SW                  PIC X(01).
+               88  ABEXTWS-XHL-HAS-FILTERS             VALUE "Y".
+               88  ABEXTWS-XHL-NO-FILTERS              VALUE "N".
+
+           05  ABEXTWS-XHL-FILTER-STRING               PIC X(1000).
+
+           05  ABEXTWS-XHLF-ITEM            PIC X(16)       
+                       VALUE "(XHL-ITEM=""?"")".
+           05  ABEXTWS-XHLF-ITEM-TYPE       PIC X(21)       
+                       VALUE "(XHL-ITEM-TYPE=""?"")".
+           05  ABEXTWS-XHLF-LOCATION        PIC X(20)       
+                       VALUE "(XHL-LOCATION=""?"")".
+           05  ABEXTWS-XHLF-SHIP-DATE       PIC X(22)       
+                       VALUE "(XHL-SHIP-DATE>=""?"")".
+           05  ABEXTWS-XHLF-PRINT-DATE       PIC X(23)       
+                       VALUE "(XHL-PRINT-DATE>=""?"")".
+           05  ABEXTWS-XHLF-ALPHA-CODE      PIC X(22)       
+                       VALUE "(XHL-ALPHA-CODE=""?"")".
+           05  ABEXTWS-XHLF-SALES-MAJCL     PIC X(23)       
+                       VALUE "(XHL-SALES-MAJCL=""?"")".
+           05  ABEXTWS-XHLF-INVEN-MAJCL     PIC X(23)       
+                       VALUE "(XHL-INVEN-MAJCL=""?"")".
+
+      *------  DATA AREA  --------------------
+
+           05  ABEXTWS-ABHISTLINE.
+               10  ABEXTWS-XHL-REQUEST-DATE            PIC 9(08).
+               10  ABEXTWS-XHL-COMPANY                 PIC 9(04).
+               10  ABEXTWS-XHL-ORDER-NBR               PIC 9(08).
+               10  ABEXTWS-XHL-LINE-NBR                PIC 9(06).
+               10  ABEXTWS-XHL-SHIPMENT-NBR            PIC 9(10).
+               10  ABEXTWS-XHL-ITEM                    PIC X(32).
+               10  ABEXTWS-XHL-ITEM-TYPE               PIC X(01).
+               10  ABEXTWS-XHL-LOCATION                PIC X(05).
+               10  ABEXTWS-XHL-SHIP-DATE               PIC 9(08).
+               10  ABEXTWS-XHL-PRINT-DATE              PIC 9(08).
+               10  ABEXTWS-XHL-GENERIC                 PIC X(10).
+               10  ABEXTWS-XHL-LONG-DESC               PIC X(60).
+               10  ABEXTWS-XHL-ALPHA-CODE              PIC X(04).
+               10  ABEXTWS-XHL-PROJECT-NBR             PIC X(06).
+               10  ABEXTWS-XHL-SALES-MAJCL             PIC X(04).
+               10  ABEXTWS-XHL-SALES-MINCL             PIC X(04).
+               10  ABEXTWS-XHL-INVEN-MAJCL             PIC X(04).
+               10  ABEXTWS-XHL-INVEN-MINCL             PIC X(04).
+               10  ABEXTWS-XHL-PURCH-MAJCL             PIC X(04).
+               10  ABEXTWS-XHL-PURCH-MINCL             PIC X(04).
+               10  ABEXTWS-XHL-GEO-MAJCL               PIC X(04).
+               10  ABEXTWS-XHL-GEO-MINCL               PIC X(04).
+               10  ABEXTWS-XHL-PROMO-CLASS             PIC X(01).
+               10  ABEXTWS-XHL-ORDERED-QTY             PIC 9(09).
+               10  ABEXTWS-XHL-SHIPPED-QTY             PIC 9(09).
+               10  ABEXTWS-XHL-UNIT-PRICE              PIC 9(08)V9(05).
+               10  ABEXTWS-XHL-SHPD-UNIT-COST          PIC 9(08)V9(05).
+               10  ABEXTWS-XHL-SAP-MAT-COMP            PIC 9(04).
+               10  ABEXTWS-XHL-SAP-MAT-BUS-A           PIC X(04).
+               10  ABEXTWS-XHL-SAP-MAT-COST-C          PIC X(10).
+               10  ABEXTWS-XHL-SAP-MAT-ACCT            PIC X(10).
+               10  ABEXTWS-XHL-SAP-MAT-ALLOC           PIC X(18).
+               10  ABEXTWS-XHL-SAP-MAT-INTORD          PIC X(12).
+               10  FILLER                              PIC X(18).
+
+           05  ABEXTWS-ABHISTLINE-DISPLAY REDEFINES ABEXTWS-ABHISTLINE.
+               10  ABEXTWS-ABHISTLINE-1                 PIC X(70).
+               10  ABEXTWS-ABHISTLINE-2                 PIC X(70).
+               10  ABEXTWS-ABHISTLINE-3                 PIC X(70).
+               10  ABEXTWS-ABHISTLINE-4                 PIC X(70).
+               10  ABEXTWS-ABHISTLINE-5                 PIC X(20).
+
+
+      *-----------------------------------------------------------------
+       03  ABEXTWS-XCH-DATABASE-GROUP.                
+      *-----------------------------------------------------------------
+
+           05  ABEXTWS-ABCURRHDR-SW            PIC 9(01)  VALUE ZEROS.
+               88  ABEXTWS-ABCURRHDR-NOTFOUND             VALUE ZEROS.
+               88  ABEXTWS-ABCURRHDR-FOUND                VALUE 1.
+
+
+      *------  KEYS  --------------------
+
+           05  ABEXTWS-XCHSET              PIC 9(03)       VALUE ZEROS.
+           05  ABEXTWS-XCHSET-GEN-ELEMS    PIC 9(02)       VALUE ZEROS.
+
+           05  ABEXTWS-ABCURRHDR-KEYS.
+               10  ABEXTWS-XCHSET1.
+                   15  ABEXTWS-XCHSET1-COMPANY         PIC 9(04).
+                   15  ABEXTWS-XCHSET1-ORDSRCE-CODE    PIC X(02).
+                   15  ABEXTWS-XCHSET1-ORDSRCE-YR-A    PIC X(04).
+                   15  ABEXTWS-XCHSET1-ORDSRCE-YR REDEFINES
+                       ABEXTWS-XCHSET1-ORDSRCE-YR-A    PIC 9(04).
+                   15  ABEXTWS-XCHSET1-ORDSRCE-NBR-A   PIC X(02).
+                   15  ABEXTWS-XCHSET1-ORDSRCE-NBR   REDEFINES
+                       ABEXTWS-XCHSET1-ORDSRCE-NBR-A   PIC 9(02).
+                   15  ABEXTWS-XCHSET1-BATCH-NAME      PIC X(10).
+                   15  ABEXTWS-XCHSET1-CUSTOMER        PIC X(09).
+                   15  ABEXTWS-XCHSET1-AB-REQUEST      PIC X(10).
+                   15  ABEXTWS-XCHSET1-REQUEST-DATE    PIC 9(08).
+                   15  ABEXTWS-XCHSET1-ORDER-NBR       PIC 9(08).
+
+               10  ABEXTWS-XCHUID.
+                   15  ABEXTWS-XCHUID-UNIQUE-I-D       PIC X(36).
+
+
+      *------  FILTERS  --------------------
+
+           05  ABEXTWS-XCHP-FILTERS.
+            06 ABEXTWS-XCHP-FILTERS-1.
+               10  ABEXTWS-XCHP-COMPANY                PIC 9(04).
+               10  ABEXTWS-XCHP-ORDSRCE-CODE           PIC X(02).
+               10  ABEXTWS-XCHP-ORDSRCE-YR-A           PIC X(04).
+               10  ABEXTWS-XCHP-ORDSRCE-YR REDEFINES
+                   ABEXTWS-XCHP-ORDSRCE-YR-A           PIC 9(04).
+               10  ABEXTWS-XCHP-ORDSRCE-NBR-A          PIC X(02).
+               10  ABEXTWS-XCHP-ORDSRCE-NBR REDEFINES           
+                   ABEXTWS-XCHP-ORDSRCE-NBR-A          PIC 9(02).
+               10  ABEXTWS-XCHP-CUSTOMER               PIC X(09).
+               10  ABEXTWS-XCHP-AB-REQUEST             PIC X(10).
+               10  ABEXTWS-XCHP-REQUEST-DATE           PIC 9(08).
+               10  ABEXTWS-XCHP-ORDER-NBR-A            PIC X(08).
+               10  ABEXTWS-XCHP-ORDER-NBR REDEFINES
+                   ABEXTWS-XCHP-ORDER-NBR-A            PIC 9(08).
+               10  ABEXTWS-XCHP-CUST-TYPE              PIC X(02).
+               10  ABEXTWS-XCHP-CUST-ORG-CODE          PIC X(06).
+            06 ABEXTWS-XCHP-FILTERS-2.
+               10  ABEXTWS-XCHP-SHIP-CITY              PIC X(18).
+               10  ABEXTWS-XCHP-CUST-STATE             PIC X(02).
+               10  ABEXTWS-XCHP-CUST-MCA               PIC X(03).
+               10  ABEXTWS-XCHP-PAYMENT-METHOD         PIC X(04).
+               10  ABEXTWS-XCHP-SHIP-METHOD            PIC X(04).
+            06 ABEXTWS-XCHP-FILTERS-LINE.
+               10  ABEXTWS-XCHP-ITEM               PIC X(32).
+               10  ABEXTWS-XCHP-ITEM-TYPE          PIC X(01).
+               10  ABEXTWS-XCHP-LOCATION           PIC X(05).
+               10  ABEXTWS-XCHP-SHIP-DATE-A        PIC X(08).
+               10  ABEXTWS-XCHP-SHIP-DATE REDEFINES               
+                   ABEXTWS-XCHP-SHIP-DATE-A        PIC 9(08).
+               10  ABEXTWS-XCHP-PRINT-DATE-A       PIC X(08).
+               10  ABEXTWS-XCHP-PRINT-DATE REDEFINES               
+                   ABEXTWS-XCHP-PRINT-DATE-A       PIC 9(08).
+               10  ABEXTWS-XCHP-ALPHA-CODE         PIC X(04).
+               10  ABEXTWS-XCHP-SALES-MAJCL        PIC X(04).
+               10  ABEXTWS-XCHP-INVEN-MAJCL        PIC X(05).
+
+
+           05  ABEXTWS-XCH-FILTERS-SW                  PIC X(01).
+               88  ABEXTWS-XCH-HAS-FILTERS             VALUE "Y".
+               88  ABEXTWS-XCH-NO-FILTERS              VALUE "N".
+
+           05  ABEXTWS-XCH-FILTER-STRING               PIC X(1000).
+
+           05  ABEXTWS-XCHF-ORDSRCE-CODE    PIC X(24)       
+                       VALUE "(XCH-ORDSRCE-CODE=""?"")".
+           05  ABEXTWS-XCHF-ORDSRCE-YR      PIC X(22)       
+                       VALUE "(XCH-ORDSRCE-YR=""?"")".
+           05  ABEXTWS-XCHF-ORDSRCE-NBR     PIC X(23)       
+                       VALUE "(XCH-ORDSRCE-NBR=""?"")".
+           05  ABEXTWS-XCHF-ALPHA-CODE      PIC X(22)       
+                       VALUE "(XCH-ALPHA-CODE=""?"")".
+           05  ABEXTWS-XCHF-CUSTOMER        PIC X(20)       
+                       VALUE "(XCH-CUSTOMER=""?"")".
+           05  ABEXTWS-XCHF-AB-REQUEST      PIC X(22)       
+                       VALUE "(XCH-AB-REQUEST=""?"")".
+           05  ABEXTWS-XCHF-REQUEST-DATE    PIC X(25)       
+                       VALUE "(XCH-REQUEST-DATE>=""?"")".
+           05  ABEXTWS-XCHF-ORDER-NBR       PIC X(21)       
+                       VALUE "(XCH-ORDER-NBR=""?"")".
+           05  ABEXTWS-XCHF-CUST-TYPE       PIC X(21)       
+                       VALUE "(XCH-CUST-TYPE=""?"")".
+           05  ABEXTWS-XCHF-CUST-ORG-CODE   PIC X(25)       
+                       VALUE "(XCH-CUST-ORG-CODE=""?"")".
+           05  ABEXTWS-XCHF-SHIP-CITY      PIC X(21)       
+                       VALUE "(XCH-SHIP-CITY=""?"")".
+           05  ABEXTWS-XCHF-CUST-STATE      PIC X(22)       
+                       VALUE "(XCH-CUST-STATE=""?"")".
+           05  ABEXTWS-XCHF-CUST-MCA        PIC X(20)       
+                       VALUE "(XCH-CUST-MCA=""?"")".
+           05  ABEXTWS-XCHF-PAYMENT-METHOD  PIC X(26)       
+                       VALUE "(XCH-PAYMENT-METHOD=""?"")".
+           05  ABEXTWS-XCHF-SHIP-METHOD     PIC X(23)       
+                       VALUE "(XCH-SHIP-METHOD=""?"")".
+           05  ABEXTWS-XCHF-FR-REQ-DATE     PIC X(25)       
+                       VALUE "(XCH-REQUEST-DATE>=""?"")".
+           05  ABEXTWS-XCHF-TO-REQ-DATE     PIC X(25)       
+                       VALUE "(XCH-REQUEST-DATE<=""?"")".
+
+      *------  DATA AREA  --------------------
+
+           05  ABEXTWS-ABCURRHDR.
+               10  ABEXTWS-XCH-UNIQUE-I-D              PIC X(36).
+               10  ABEXTWS-XCH-REQUEST-DATE            PIC 9(08).
+               10  ABEXTWS-XCH-COMPANY                 PIC 9(04).
+               10  ABEXTWS-XCH-ORDER-NBR               PIC 9(08).
+               10  ABEXTWS-XCH-CUSTOMER                PIC X(09).
+               10  ABEXTWS-XCH-BATCH-NAME              PIC X(10).
+               10  ABEXTWS-XCH-AB-REQUEST              PIC X(10).
+               10  ABEXTWS-XCH-CUST-TYPE               PIC X(02).
+               10  ABEXTWS-XCH-CUST-ORG-CODE           PIC X(06).
+               10  ABEXTWS-XCH-SHIP-CITY               PIC X(18).
+               10  ABEXTWS-XCH-CUST-STATE              PIC X(02).
+               10  ABEXTWS-XCH-CUST-MCA                PIC X(03).
+               10  ABEXTWS-XCH-BUDGET-FLAG             PIC X(01).
+               10  ABEXTWS-XCH-ORDSRCE-CODE            PIC X(02).
+               10  ABEXTWS-XCH-ORDSRCE-YR              PIC 9(04).
+               10  ABEXTWS-XCH-ORDSRCE-NBR             PIC 9(02).
+               10  ABEXTWS-XCH-PAYMENT-METHOD          PIC X(04).
+               10  ABEXTWS-XCH-SHIP-METHOD             PIC X(04).
+               10  ABEXTWS-XCH-SAP-OVR-COMP            PIC 9(04).
+               10  ABEXTWS-XCH-SAP-OVR-BUS-A           PIC X(04).
+               10  ABEXTWS-XCH-SAP-OVR-COST-C          PIC X(10).
+               10  ABEXTWS-XCH-SAP-OVR-ACCT            PIC X(10).
+               10  ABEXTWS-XCH-SAP-OVR-ALLOC           PIC X(18).
+               10  ABEXTWS-XCH-SAP-OVR-INTORD          PIC X(12).
+               10  FILLER                              PIC X(45).
+
+
+      *-----------------------------------------------------------------
+         03  ABEXTWS-XCL-DATABASE-GROUP.
+      *-----------------------------------------------------------------
+      
+           05  ABEXTWS-ABCURRLINE-SW           PIC 9(01)  VALUE ZEROS.
+               88  ABEXTWS-ABCURRLINE-NOTFOUND            VALUE ZEROS.
+               88  ABEXTWS-ABCURRLINE-FOUND               VALUE 1.
+
+           05  ABEXTWS-XCLSET                  PIC 9(03)  VALUE ZEROS.
+
+      *------  FILTERS  --------------------
+
+           05  ABEXTWS-XCLP-FILTERS.
+            06 ABEXTWS-XCLP-FILTERS-1.
+               10  ABEXTWS-XCLP-COMPANY                PIC 9(04).
+               10  ABEXTWS-XCLP-ORDSRCE-CODE           PIC X(02).
+               10  ABEXTWS-XCLP-ORDSRCE-YR             PIC 9(04).
+               10  ABEXTWS-XCLP-ORDSRCE-NBR-A          PIC X(02).
+               10  ABEXTWS-XCLP-ORDSRCE-NBR REDEFINES           
+                   ABEXTWS-XCLP-ORDSRCE-NBR-A          PIC 9(02).
+               10  ABEXTWS-XCLP-CUSTOMER               PIC X(09).
+               10  ABEXTWS-XCLP-AB-REQUEST             PIC X(10).
+               10  ABEXTWS-XCLP-REQUEST-DATE           PIC 9(08).
+               10  ABEXTWS-XCLP-ORDER-NBR-A            PIC X(08).
+               10  ABEXTWS-XCLP-ORDER-NBR REDEFINES
+                   ABEXTWS-XCLP-ORDER-NBR-A            PIC 9(08).
+               10  ABEXTWS-XCLP-CUST-TYPE              PIC X(02).
+               10  ABEXTWS-XCLP-CUST-ORG-CODE          PIC X(06).
+            06 ABEXTWS-XCLP-FILTERS-2.
+               10  ABEXTWS-XCLP-SHIP-CITY              PIC X(18).
+               10  ABEXTWS-XCLP-CUST-STATE             PIC X(02).
+               10  ABEXTWS-XCLP-CUST-MCA               PIC X(03).
+               10  ABEXTWS-XCLP-PAYMENT-METHOD         PIC X(04).
+               10  ABEXTWS-XCLP-SHIP-METHOD            PIC X(04).
+            06 ABEXTWS-XCLP-FILTERS-LINE.
+               10  ABEXTWS-XCLP-ITEM                   PIC X(32).
+               10  ABEXTWS-XCLP-ITEM-TYPE              PIC X(01).
+               10  ABEXTWS-XCLP-LOCATION               PIC X(05).
+               10  ABEXTWS-XCLP-SHIP-DATE-A            PIC X(08).
+               10  ABEXTWS-XCLP-SHIP-DATE REDEFINES                  
+                   ABEXTWS-XCLP-SHIP-DATE-A            PIC 9(08).
+               10  ABEXTWS-XCLP-PRINT-DATE-A           PIC X(08).
+               10  ABEXTWS-XCLP-PRINT-DATE REDEFINES                  
+                   ABEXTWS-XCLP-PRINT-DATE-A           PIC 9(08).
+               10  ABEXTWS-XCLP-ALPHA-CODE             PIC X(04).
+               10  ABEXTWS-XCLP-SALES-MAJCL            PIC X(04).
+               10  ABEXTWS-XCLP-INVEN-MAJCL            PIC X(04).
+
+           05  ABEXTWS-XCL-FILTERS-SW                  PIC X(01).
+               88  ABEXTWS-XCL-HAS-FILTERS             VALUE "Y".
+               88  ABEXTWS-XCL-NO-FILTERS              VALUE "N".
+
+           05  ABEXTWS-XCL-FILTER-STRING               PIC X(1000).
+
+           05  ABEXTWS-XCLF-ITEM            PIC X(16)       
+                       VALUE "(XCL-ITEM=""?"")".
+           05  ABEXTWS-XCLF-ITEM-TYPE       PIC X(21)       
+                       VALUE "(XCL-ITEM-TYPE=""?"")".
+           05  ABEXTWS-XCLF-LOCATION        PIC X(20)       
+                       VALUE "(XCL-LOCATION=""?"")".
+           05  ABEXTWS-XCLF-SHIP-DATE       PIC X(22)       
+                       VALUE "(XCL-SHIP-DATE>=""?"")".
+           05  ABEXTWS-XCLF-PRINT-DATE      PIC X(23)       
+                       VALUE "(XCL-PRINT-DATE>=""?"")".
+           05  ABEXTWS-XCLF-ALPHA-CODE      PIC X(22)       
+                       VALUE "(XCL-ALPHA-CODE=""?"")".
+           05  ABEXTWS-XCLF-SALES-MAJCL     PIC X(23)       
+                       VALUE "(XCL-SALES-MAJCL=""?"")".
+           05  ABEXTWS-XCLF-INVEN-MAJCL     PIC X(23)       
+                       VALUE "(XCL-INVEN-MAJCL=""?"")".
+
+
+      *------  DATA AREA  --------------------
+
+           05  ABEXTWS-ABCURRLINE.
+               10  ABEXTWS-XCL-HDR-UNIQUE-I-D          PIC X(36).
+      *         10  ABEXTWS-XCL-REQUEST-DATE            PIC X(08).
+               10  ABEXTWS-XCL-ITEM                    PIC X(32).
+               10  ABEXTWS-XCL-LINE-NBR                PIC 9(06).
+               10  ABEXTWS-XCL-SHIPMENT-NBR            PIC 9(10).
+               10  ABEXTWS-XCL-ITEM-TYPE               PIC X(01).
+               10  ABEXTWS-XCL-LOCATION                PIC X(05).
+               10  ABEXTWS-XCL-SHIP-DATE               PIC 9(08).
+               10  ABEXTWS-XCL-PRINT-DATE              PIC 9(08).
+               10  ABEXTWS-XCL-GENERIC                 PIC X(10).
+               10  ABEXTWS-XCL-LONG-DESC               PIC X(60).
+               10  ABEXTWS-XCL-ALPHA-CODE              PIC X(04).
+               10  ABEXTWS-XCL-PROJECT-NBR             PIC X(06).
+               10  ABEXTWS-XCL-SALES-MAJCL             PIC X(04).
+               10  ABEXTWS-XCL-SALES-MINCL             PIC X(04).
+               10  ABEXTWS-XCL-INVEN-MAJCL             PIC X(04).
+               10  ABEXTWS-XCL-INVEN-MINCL             PIC X(04).
+               10  ABEXTWS-XCL-PURCH-MAJCL             PIC X(04).
+               10  ABEXTWS-XCL-PURCH-MINCL             PIC X(04).
+               10  ABEXTWS-XCL-GEO-MAJCL               PIC X(04).
+               10  ABEXTWS-XCL-GEO-MINCL               PIC X(04).
+               10  ABEXTWS-XCL-PROMO-CLASS             PIC X(01).
+               10  ABEXTWS-XCL-ORDERED-QTY             PIC 9(09).
+               10  ABEXTWS-XCL-SHIPPED-QTY             PIC 9(09).
+               10  ABEXTWS-XCL-UNIT-PRICE              PIC 9(08)V9(05).
+               10  ABEXTWS-XCL-UNIT-COST               PIC 9(08)V9(05).
+               10  ABEXTWS-XCL-SAP-MAT-COMP            PIC 9(04).
+               10  ABEXTWS-XCL-SAP-MAT-BUS-A           PIC X(04).
+               10  ABEXTWS-XCL-SAP-MAT-COST-C          PIC X(10).
+               10  ABEXTWS-XCL-SAP-MAT-ACCT            PIC X(10).
+               10  ABEXTWS-XCL-SAP-MAT-ALLOC           PIC X(18).
+               10  ABEXTWS-XCL-SAP-MAT-INTORD          PIC X(12).
+               10  FILLER                              PIC X(18).
+
+
+      ******************************************************************
+      *                                                                 
+      *     THIS IS THE OLD ABEXTRACT LAYOUT BY SETTING A SWITCH YOU 
+      *     CAN STILL GET THIS LAYOUT IF YOU NEED TO 
+      *     (LENGTH = 450) 
+      ******************************************************************
+      
+       01  ABEXTRACTWS.
+           02  ABEXTRACT-COMPANY                 PIC 9(04) VALUE ZEROES.
+           02  ABEXTRACT-ITEM                    PIC X(10) VALUE SPACES.
+           02  ABEXTRACT-CUSTOMER                PIC X(09) VALUE SPACES.
+           02  ABEXTRACT-ORDER-NBR               PIC 9(08) VALUE ZEROES.
+           02  ABEXTRACT-LINE-NBR                PIC 9(06) VALUE ZEROES.
+           02  ABEXTRACT-SHIPMENT-NBR            PIC 9(10) VALUE ZEROES.
+           02  ABEXTRACT-LOCATION                PIC X(04) VALUE SPACES.
+      ***
+           02  ABEXTRACT-ORDERED-QTY       PIC S9(08) VALUE ZEROES
+                                           SIGN IS TRAILING SEPARATE.
+           02  ABEXTRACT-PRINTED-QTY       PIC S9(08) VALUE ZEROES
+                                           SIGN IS TRAILING SEPARATE.
+           02  ABEXTRACT-SHIPPED-QTY       PIC S9(08) VALUE ZEROES
+                                           SIGN IS TRAILING SEPARATE.
+           02  ABEXTRACT-BACKORD-QTY       PIC S9(08) VALUE ZEROES
+                                           SIGN IS TRAILING SEPARATE.
+           02  ABEXTRACT-ALLOCATED-QTY     PIC S9(08) VALUE ZEROES
+                                           SIGN IS TRAILING SEPARATE.
+           02  ABEXTRACT-CANCEL-QTY        PIC S9(08) VALUE ZEROES
+                                           SIGN IS TRAILING SEPARATE.
+           02  ABEXTRACT-UNIT-PRICE        PIC S9(08)V9(05) VALUE ZEROES
+                                           SIGN IS TRAILING SEPARATE.
+           02  ABEXTRACT-SHIPPED-UNIT-COST PIC S9(08)V9(05) VALUE ZEROES
+                                           SIGN IS TRAILING SEPARATE.
+      ***
+           02  ABEXTRACT-CUST-TYPE               PIC X(02) VALUE SPACES.
+           02  ABEXTRACT-CUST-ORG-CODE           PIC X(06) VALUE SPACES.
+           02  ABEXTRACT-SHIP-CITY               PIC X(18) VALUE SPACES.
+           02  ABEXTRACT-CUST-STATE              PIC X(02) VALUE SPACES.
+           02  ABEXTRACT-CUST-MCA                PIC X(03) VALUE SPACES.
+           02  ABEXTRACT-GENERIC                 PIC X(10) VALUE SPACES.
+           02  ABEXTRACT-BRAND-FAMILY            PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-PRINT-PRIORITY          PIC 9(03) VALUE ZEROES.
+           02  ABEXTRACT-LONG-DESC               PIC X(50) VALUE SPACES.
+           02  ABEXTRACT-SALES-MAJCL             PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-ALPHA-CODE              PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-ITEM-TYPE               PIC X(01) VALUE SPACES.
+           02  FILLER                            PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-CXL-DATE                PIC 9(08) VALUE ZEROES.
+           02  ABEXTRACT-REQUEST-DATE            PIC 9(08) VALUE ZEROES.
+           02  ABEXTRACT-SHIP-DATE               PIC 9(08) VALUE ZEROES.
+           02  ABEXTRACT-PRINT-DATE              PIC 9(08) VALUE ZEROES.
+           02  ABEXTRACT-BUDGET-CCYY.
+               05  ABEXTRACT-BUDGET-CC           PIC X(02) VALUE SPACES.
+               05  ABEXTRACT-BUDGET-YY           PIC X(02) VALUE SPACES.
+           02  ABEXTRACT-BUDGET-TYPE             PIC X(02) VALUE SPACES.
+           02  ABEXTRACT-SAP-MATERIAL.
+               05  ABEXTRACT-SAP-COMPANY         PIC 9(04) VALUE ZEROS.
+               05  ABEXTRACT-SAP-BUS-AREA        PIC X(04) VALUE SPACES.
+               05  ABEXTRACT-SAP-COST-CENTER     PIC X(10) VALUE SPACES.
+               05  ABEXTRACT-SAP-ACCOUNT         PIC X(10) VALUE SPACES.
+               05  ABEXTRACT-SAP-ALLOCATION      PIC X(18) VALUE SPACES.
+               05  ABEXTRACT-SAP-INTERN-ORDER    PIC X(12) VALUE SPACES.
+           02  ABEXTRACT-CUST-PO-NBR             PIC X(10) VALUE SPACES.
+           02  FILLER                            PIC X(30) VALUE SPACES.
+           02  ABEXTRACT-SALES-MINCL             PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-INVEN-MAJCL             PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-INVEN-MINCL             PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-PURCH-MAJCL             PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-PURCH-MINCL             PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-PRODUCT-MAJCL           PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-PRODUCT-MINCL           PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-GEO-MAJCL               PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-GEO-MINCL               PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-PROMO-CLASS             PIC X(01) VALUE SPACES.
+      ***
+           02  ABEXTRACT-ORDSRCE-CODE            PIC X(02) VALUE SPACES.
+           02  ABEXTRACT-ORDSRCE-YR              PIC 9(04) VALUE ZEROS.
+           02  ABEXTRACT-ORDSRCE-NBR             PIC 9(02) VALUE ZEROS.
+           02  ABEXTRACT-PAYMENT-METHOD          PIC X(04) VALUE SPACES.
+           02  ABEXTRACT-FILLER                  PIC X(21) VALUE SPACES.
